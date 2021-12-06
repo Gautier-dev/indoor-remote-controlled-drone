@@ -10,7 +10,7 @@ eventlet.monkey_patch()
 app = Flask(__name__)
 
 app.config['TEMPLATES_AUTO_RELOAD'] = True
-app.config['MQTT_BROKER_URL'] = '127.0.0.1'
+app.config['MQTT_BROKER_URL'] = '192.168.0.149'
 app.config['MQTT_BROKER_PORT'] = 1883
 app.config['MQTT_USERNAME'] = ''
 app.config['MQTT_PASSWORD'] = ''
@@ -38,6 +38,15 @@ def go_down():
     mqtt.publish("gimbal","down")
     return ("nothing") 
 
+@app.route('/send_destination')
+def send_position():
+    """Move down the gimbal"""
+    json_data = request.args.to_dict()
+    print(json_data)
+    position = json.dumps({"x" : int(json_data["x"]), "y" : int(json_data["y"]), "z" : int(json_data["z"])})
+    mqtt.publish("dwm/destination", position)
+    return ("nothing") 
+
 @socketio.on('connect', namespace='/web')
 def connect_web():
     print('[INFO] Web client connected: {}'.format(request.sid))
@@ -62,13 +71,18 @@ def disconnect_cv():
 def handle_cv_message(message):
     socketio.emit('server2web', message, namespace='/web')
 
+@mqtt.on_connect()
+def handle_connect(client, userdata, flags, rc):
+    mqtt.subscribe('dwm/#')
+
 @mqtt.on_message()
 def handle_mqtt_message(client, userdata, message):
     data = dict(
         topic=message.topic,
         payload=message.payload.decode()
     )
-    socketio.emit('mqtt_message', data=data)
+ 
+    socketio.emit('mqtt', data=data, namespace='/web')
 
 
 @mqtt.on_log()
