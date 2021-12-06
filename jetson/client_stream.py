@@ -24,9 +24,10 @@ def on_connect(client, userdata, flags, rc):
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
     payload = msg.payload.decode('UTF-8')
-    print("loftoff")
+    print("liftoff")
     if payload = "up":
-        drone.vehicle.simple_takeoff(2)
+        print("liftoff")
+        # drone.vehicle.simple_takeoff(2)
 
 @sio.event
 def connect():
@@ -90,7 +91,7 @@ class CVClient(object):
 
 
 def main(server_addr):
-    streamer = CVClient(server_addr).setup()
+    streamer = CVClient("192.168.0.185").setup()
         
     video_stream = cv2.VideoCapture(camset, cv2.CAP_GSTREAMER)
             # Allow Webcam to warm up
@@ -101,7 +102,7 @@ def main(server_addr):
     client.on_message = on_message
     
     try:
-        client.connect(server_addr, 1883, 60)
+        client.connect("192.168.0.149", 1883, 60)
         client.loop_start()
     except:
         print("Connection problems")
@@ -121,12 +122,17 @@ def main(server_addr):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Drone position and video feed streamer')
+    """parser = argparse.ArgumentParser(description='Drone position and video feed streamer')
     
     parser.add_argument(
             '--server-addr',  type=str, default='localhost',
             help='The IP address or hostname of the SocketIO server.')
+    
+    parser.add_argument(
+            '--mqtt-broker',  type=str, default='localhost',
+            help='IP address of the MQTT server')
   
     
     args = parser.parse_args()
-    main(args.server_addr)
+    print(args)"""
+    main()
