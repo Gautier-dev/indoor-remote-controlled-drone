@@ -165,7 +165,7 @@
             <figure class="css-chart">
               <ul class="line-chart">
                     <li style="--y:200px ;  --x: 200px">
-                      <div class="drone-point"></div> 
+                      <div id="drone-point" class="drone-point"></div> 
                     </li> 
                     <li style="--y:0px ;  --x: 0px">
                       <div class="anchor-point"></div> 
@@ -223,7 +223,7 @@
   document.addEventListener("DOMContentLoaded", function(event) {
     const image_elem = document.getElementById("streamer-image");
     const text_elem = document.getElementById("streamer-text");
-    const drone_point = document.getElementById("drone_point");
+    const drone_point = document.getElementById("drone-point");
 
     var socket = io.connect('http://' + document.domain + ':' + location.port + '/web', {
       reconnection: false
@@ -250,9 +250,13 @@
     });
 
     socket.on('mqtt', (msg) => {
-      console.log("topic : " + msg.topic)
-      console.log("Received mqtt message : " + msg.payload)
-     
+      console.log("topic : " + msg.topic);
+      console.log("Received mqtt message : " + msg.payload);
+      if (msg.topic == "dwm/node/19f2/uplink/location") {
+        console.log(JSON.parse(msg.payload).position.x * 400/254)
+        drone_point.style.setProperty("--x", JSON.parse(msg.payload).position.x * 400/2.54 + "px");
+        drone_point.style.setProperty("--y", JSON.parse(msg.payload).position.y * 400/2.54 + "px");
+      }
   
     });
 

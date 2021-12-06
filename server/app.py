@@ -10,7 +10,7 @@ eventlet.monkey_patch()
 app = Flask(__name__)
 
 app.config['TEMPLATES_AUTO_RELOAD'] = True
-app.config['MQTT_BROKER_URL'] = '127.0.0.1'
+app.config['MQTT_BROKER_URL'] = '192.168.0.149'
 app.config['MQTT_BROKER_PORT'] = 1883
 app.config['MQTT_USERNAME'] = ''
 app.config['MQTT_PASSWORD'] = ''
