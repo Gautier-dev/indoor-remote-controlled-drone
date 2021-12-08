@@ -7,27 +7,48 @@ from src.drone_control import Drone
 from dronekit import VehicleMode 
 import time, numpy as np, pathlib 
 import paho.mqtt.client as mqtt
-
+import math
+import json
  
 sio = socketio.Client()
 camset = "nvarguscamerasrc sensor_id=0 ! video/x-raw(memory:NVMM), width=4056, height=3040, format=(string)NV12, framerate=5/1 ! nvvidconv ! video/x-raw, width=800, height=600, format=(string)BGRx ! videoconvert ! video/x-raw, format=(string)BGR ! appsink "
 drone = Drone(serial_address="/dev/ttyTHS1", baud=57600)
 THRESHOLD_ALT = 0.3
+x_current, y_current = 0,0
 
 # The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, flags, rc):
     print("Connected with result code "+str(rc))
     # Subscribing in on_connect() means that if we lose the connection and
     # reconnect then subscriptions will be renewed.
-    client.subscribe("gimbal")
+    client.subscribe("dwm/#")
 
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
-    payload = msg.payload.decode('UTF-8')
-    print("liftoff")
-    if payload = "up":
-        print("liftoff")
-        # drone.vehicle.simple_takeoff(2)
+    payload = str(msg.payload.decode('UTF-8'))
+    json_data = json.loads(payload) 
+    if msg.topic == "dwm/destination":
+        if (drone.vehicle.location.global_relative_frame.alt < 0.3):  # Take off if landed
+            takeoff_alt = 1.5
+            drone.vehicle.simple_takeoff(takeoff_alt)
+            time.sleep(5)
+        x_destination, y_destination = json_data["x"], json_data["y"] # meters
+        x = x_destination-x_current
+        y = y_destination-y_current
+        yaw = drone.vehicle.attitude.yaw
+        drone.send_global_velocity(
+                        x * np.cos(yaw) - y * np.sin(yaw),
+                        x * np.sin(yaw) + y * np.cos(yaw),
+                        0,
+                        math.sqtr(x**2 + y**2),
+                    )
+        drone.send_global_velocity(0, 0, 0, 1)
+    if msg.topic == "dwm/node/19f2/uplink/location":
+        global x_current
+        global y_current
+        x_current = int(json_data["position"]["x"])
+        y_current = int(json_data["position"]["y"])
+
 
 @sio.event
 def connect():
@@ -115,24 +136,12 @@ def main(server_addr):
         if cv2.waitKey(1)==ord('q'):
             break
  
-    cam.release()
+    video_stream.release()
     client.loop_stop()
     streamer.close()
     print("Program Ending")
 
 
 if __name__ == "__main__":
-    """parser = argparse.ArgumentParser(description='Drone position and video feed streamer')
-    
-    parser.add_argument(
-            '--server-addr',  type=str, default='localhost',
-            help='The IP address or hostname of the SocketIO server.')
-    
-    parser.add_argument(
-            '--mqtt-broker',  type=str, default='localhost',
-            help='IP address of the MQTT server')
-  
-    
-    args = parser.parse_args()
-    print(args)"""
+
     main()
