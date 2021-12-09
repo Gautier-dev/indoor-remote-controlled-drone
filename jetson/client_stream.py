@@ -3,7 +3,7 @@ import argparse
 import socketio
 import cv2
 import base64 
-from src.drone_control import Drone
+from drone import Drone
 from dronekit import VehicleMode 
 import time, numpy as np, pathlib 
 import paho.mqtt.client as mqtt
@@ -140,7 +140,6 @@ def main(server_addr):
     client.loop_stop()
     streamer.close()
     print("Program Ending")
-
 
 if __name__ == "__main__":
 
